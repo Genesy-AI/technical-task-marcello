@@ -1,0 +1,22 @@
+export type LeadsEnrichPhonesInput = {
+    leadIds: number[]
+}
+
+export type LeadsEnrichPhonesOutput = {
+    success: boolean
+    enrichedCount: number
+    results: Array<{
+        leadId: number
+        phoneNumber: string | null
+        phoneEnrichmentStatus: string | null
+    }>
+    skipped: Array<{
+        leadId: number
+        leadName: string
+    }>
+    errors: Array<{
+        leadId: number
+        leadName: string
+        error: string
+    }>
+}

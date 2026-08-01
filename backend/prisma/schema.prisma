@@ -8,18 +8,19 @@ datasource db {
 }
 
 model lead {
-  id            Int      @id @default(autoincrement())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  firstName     String
-  lastName      String
-  email         String
-  jobTitle      String?
-  countryCode   String?
-  companyName   String?
-  message       String?
-  emailVerified Boolean?
-  phoneNumber   String?
-  yearsInRole   Int?
-  linkedinUrl   String?
+  id                    Int      @id @default(autoincrement())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  firstName             String
+  lastName              String
+  email                 String
+  jobTitle              String?
+  countryCode           String?
+  companyName           String?
+  message               String?
+  emailVerified         Boolean?
+  phoneNumber           String?
+  yearsInRole           Int?
+  linkedinUrl           String?
+  phoneEnrichmentStatus String?
 }
