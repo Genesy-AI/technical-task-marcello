@@ -24,6 +24,13 @@ describe('generateMessageFromTemplate', () => {
     firstName: 'Bob',
   }
 
+  const newFieldsLead: Lead = {
+    firstName: 'Alice',
+    phoneNumber: '+1-555-0100',
+    yearsInRole: 0,
+    linkedinUrl: 'https://www.linkedin.com/in/alice',
+  }
+
   describe('successful message generation', () => {
     it('should replace single field in template', () => {
       const template = 'Hello {firstName}!'
@@ -100,6 +107,27 @@ describe('generateMessageFromTemplate', () => {
       const template = 'Hello {firstName}, your last name is {lastName}'
       expect(() => generateMessageFromTemplate(template, minimalLead)).toThrow(
         'Missing required field: lastName'
+      )
+    })
+  })
+
+  describe('new lead fields: phoneNumber, yearsInRole, linkedinUrl', () => {
+    it('should replace phoneNumber and linkedinUrl in template', () => {
+      const template = 'Call {firstName} at {phoneNumber} or connect on {linkedinUrl}'
+      const result = generateMessageFromTemplate(template, newFieldsLead)
+      expect(result).toBe('Call Alice at +1-555-0100 or connect on https://www.linkedin.com/in/alice')
+    })
+
+    it('should treat yearsInRole of 0 as present, not missing', () => {
+      const template = '{firstName} has {yearsInRole} years in the role'
+      const result = generateMessageFromTemplate(template, newFieldsLead)
+      expect(result).toBe('Alice has 0 years in the role')
+    })
+
+    it('should throw when yearsInRole is missing', () => {
+      const template = '{firstName} has {yearsInRole} years in the role'
+      expect(() => generateMessageFromTemplate(template, minimalLead)).toThrow(
+        'Missing required field: yearsInRole'
       )
     })
   })

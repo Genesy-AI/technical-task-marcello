@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { api } from '../api'
+import { Autocomplete } from './Autocomplete'
 
 interface MessageTemplateModalProps {
   isOpen: boolean
@@ -106,7 +107,17 @@ export const MessageTemplateModal: FC<MessageTemplateModalProps> = ({
     }
   }, [isOpen, handleClose])
 
-  const availableFields = ['firstName', 'lastName', 'email', 'jobTitle', 'companyName', 'countryCode']
+  const availableFields = [
+    'firstName',
+    'lastName',
+    'email',
+    'jobTitle',
+    'companyName',
+    'countryCode',
+    'phoneNumber',
+    'yearsInRole',
+    'linkedinUrl',
+  ]
 
   const insertField = (field: string) => {
     if (textareaRef.current) {
@@ -156,19 +167,12 @@ export const MessageTemplateModal: FC<MessageTemplateModalProps> = ({
                 Message Template
               </label>
               <div className="space-y-3">
-                <div className="flex flex-wrap gap-2">
-                  <span className="text-sm text-gray-600">Insert field:</span>
-                  {availableFields.map((field) => (
-                    <button
-                      key={field}
-                      type="button"
-                      onClick={() => insertField(field)}
-                      className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200 transition-colors"
-                    >
-                      {`{${field}}`}
-                    </button>
-                  ))}
-                </div>
+                <Autocomplete
+                  options={availableFields}
+                  onSelect={insertField}
+                  label="Insert field:"
+                  placeholder="Search fields to insert…"
+                />
                 <textarea
                   ref={textareaRef}
                   id="message-template"

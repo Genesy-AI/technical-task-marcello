@@ -7,6 +7,9 @@ export interface CsvLead {
   jobTitle?: string
   countryCode?: string
   companyName?: string
+  phoneNumber?: string
+  yearsInRole?: number
+  linkedinUrl?: string
   isValid: boolean
   errors: string[]
   rowIndex: number
@@ -15,6 +18,15 @@ export interface CsvLead {
 export const isValidEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return emailRegex.test(email)
+}
+
+export const isValidLinkedinUrl = (url: string): boolean => {
+  try {
+    const hostname = new URL(url).hostname.toLowerCase()
+    return hostname === 'linkedin.com' || hostname.endsWith('.linkedin.com')
+  } catch {
+    return false
+  }
 }
 
 export const parseCsv = (content: string): CsvLead[] => {
@@ -49,6 +61,7 @@ export const parseCsv = (content: string): CsvLead[] => {
     if (Object.values(row).every((value) => !value)) return
 
     const lead: Partial<CsvLead> = { rowIndex: index + 2 }
+    let yearsInRoleRaw = ''
 
     Object.entries(row).forEach(([header, value]) => {
       const normalizedHeader = header.toLowerCase().replace(/[^a-z]/g, '')
@@ -73,6 +86,15 @@ export const parseCsv = (content: string): CsvLead[] => {
         case 'companyname':
           lead.companyName = trimmedValue || undefined
           break
+        case 'phonenumber':
+          lead.phoneNumber = trimmedValue || undefined
+          break
+        case 'yearsinrole':
+          yearsInRoleRaw = trimmedValue
+          break
+        case 'linkedinurl':
+          lead.linkedinUrl = trimmedValue || undefined
+          break
       }
     })
 
@@ -87,6 +109,17 @@ export const parseCsv = (content: string): CsvLead[] => {
       errors.push('Email is required')
     } else if (!isValidEmail(lead.email)) {
       errors.push('Invalid email format')
+    }
+    if (yearsInRoleRaw) {
+      const yearsInRole = Number(yearsInRoleRaw)
+      if (!Number.isInteger(yearsInRole) || yearsInRole < 0) {
+        errors.push('Invalid years in role')
+      } else {
+        lead.yearsInRole = yearsInRole
+      }
+    }
+    if (lead.linkedinUrl && !isValidLinkedinUrl(lead.linkedinUrl)) {
+      errors.push('Invalid LinkedIn URL')
     }
 
     data.push({
