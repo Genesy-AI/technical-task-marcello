@@ -237,8 +237,8 @@ export const CsvImportModal: FC<CsvImportModalProps> = ({ isOpen, onClose }) => 
                     </button>
                   </p>
                   <p className="text-sm text-gray-500">
-                    CSV must include: firstName, lastName, email (required). Optional: jobTitle, countryCode,
-                    companyName
+                    CSV must include: firstName, lastName, email (required). Optional: jobTitle, countryCode
+                    (ISO 3166-1 alpha-2, e.g. US, GB), companyName
                   </p>
                 </div>
               )}
