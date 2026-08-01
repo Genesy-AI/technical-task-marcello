@@ -182,6 +182,39 @@ Bob,Johnson,bob@example.com`
     expect(result[0].errors).toContain('Invalid email format')
   })
 
+  it('should accept valid ISO 3166-1 alpha-2 country codes and normalize casing', () => {
+    const csv = `firstName,lastName,email,countryCode
+John,Doe,john@example.com,us`
+
+    const result = parseCsv(csv)
+
+    expect(result[0].isValid).toBe(true)
+    expect(result[0].countryCode).toBe('US')
+  })
+
+  it('should reject country codes that are not valid ISO 3166-1 alpha-2 codes', () => {
+    const csv = `firstName,lastName,email,countryCode
+John,Doe,john@example.com,XXX
+Jane,Smith,jane@example.com,12`
+
+    const result = parseCsv(csv)
+
+    expect(result[0].isValid).toBe(false)
+    expect(result[0].errors.some((error) => error.includes('Invalid country code'))).toBe(true)
+    expect(result[1].isValid).toBe(false)
+    expect(result[1].errors.some((error) => error.includes('Invalid country code'))).toBe(true)
+  })
+
+  it('should treat an empty country code as valid since it is optional', () => {
+    const csv = `firstName,lastName,email,countryCode
+John,Doe,john@example.com,`
+
+    const result = parseCsv(csv)
+
+    expect(result[0].isValid).toBe(true)
+    expect(result[0].countryCode).toBeUndefined()
+  })
+
   it('should handle extra columns not in header mapping', () => {
     const csv = `firstName,lastName,email,unknownColumn
 John,Doe,john@example.com,someValue`
