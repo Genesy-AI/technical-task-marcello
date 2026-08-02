@@ -29,6 +29,15 @@ export const isValidLinkedinUrl = (url: string): boolean => {
   }
 }
 
+export const isValidPhoneNumber = (phoneNumber: string): boolean => {
+  // Allows an optional leading "+", digits/spaces/dashes/parentheses/dots, and an optional "x<digits>" extension.
+  const match = phoneNumber.trim().match(/^(\+?[\d\s().-]+?)(x\d+)?$/i)
+  if (!match) return false
+
+  const digitCount = match[1].replace(/\D/g, '').length
+  return digitCount >= 7 && digitCount <= 15
+}
+
 export const parseCsv = (content: string): CsvLead[] => {
   if (!content?.trim()) {
     throw new Error('CSV content cannot be empty')
@@ -120,6 +129,9 @@ export const parseCsv = (content: string): CsvLead[] => {
     }
     if (lead.linkedinUrl && !isValidLinkedinUrl(lead.linkedinUrl)) {
       errors.push('Invalid LinkedIn URL')
+    }
+    if (lead.phoneNumber && !isValidPhoneNumber(lead.phoneNumber)) {
+      errors.push('Invalid phone number format')
     }
 
     data.push({

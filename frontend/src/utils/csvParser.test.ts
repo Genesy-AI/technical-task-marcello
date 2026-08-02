@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseCsv, isValidEmail, isValidLinkedinUrl } from './csvParser'
+import { parseCsv, isValidEmail, isValidLinkedinUrl, isValidPhoneNumber } from './csvParser'
 
 describe('isValidEmail', () => {
   it('should return true for valid email addresses', () => {
@@ -238,8 +238,25 @@ describe('isValidLinkedinUrl', () => {
   })
 })
 
+describe('isValidPhoneNumber', () => {
+  it('should return true for common phone number formats, with or without an extension', () => {
+    expect(isValidPhoneNumber('+1-280-754-0462x2154')).toBe(true)
+    expect(isValidPhoneNumber('001-464-312-8555')).toBe(true)
+    expect(isValidPhoneNumber('(731)123-9702')).toBe(true)
+    expect(isValidPhoneNumber('063.430.8860x4762')).toBe(true)
+    expect(isValidPhoneNumber('+34 654 321 987')).toBe(true)
+  })
+
+  it('should return false for non-numeric text and numbers that are too short/long', () => {
+    expect(isValidPhoneNumber('not-a-phone')).toBe(false)
+    expect(isValidPhoneNumber('12345')).toBe(false)
+    expect(isValidPhoneNumber('1'.repeat(16))).toBe(false)
+    expect(isValidPhoneNumber('')).toBe(false)
+  })
+})
+
 describe('parseCsv - new lead fields', () => {
-  it('should parse phoneNumber as free text with no validation', () => {
+  it('should parse a valid phoneNumber', () => {
     const csv = `firstName,lastName,email,phoneNumber
 John,Doe,john@example.com,+1-280-754-0462x2154`
 
@@ -247,6 +264,16 @@ John,Doe,john@example.com,+1-280-754-0462x2154`
 
     expect(result[0].phoneNumber).toBe('+1-280-754-0462x2154')
     expect(result[0].isValid).toBe(true)
+  })
+
+  it('should mark an invalid phoneNumber format as invalid', () => {
+    const csv = `firstName,lastName,email,phoneNumber
+John,Doe,john@example.com,not-a-phone`
+
+    const result = parseCsv(csv)
+
+    expect(result[0].isValid).toBe(false)
+    expect(result[0].errors).toContain('Invalid phone number format')
   })
 
   it('should accept yearsInRole of 0 as a valid non-missing value', () => {

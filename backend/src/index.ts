@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import express, { Request, Response } from 'express'
 import { Connection, Client } from '@temporalio/client'
-import { verifyEmailWorkflow } from './workflows'
+import { verifyEmailWorkflow, enrichPhoneWorkflow } from './workflows'
 import { generateMessageFromTemplate } from './utils/messageGenerator'
 import { runTemporalWorker } from './worker'
 const prisma = new PrismaClient()
@@ -314,6 +314,84 @@ app.post('/leads/verify-emails', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error verifying emails:', error)
     res.status(500).json({ error: 'Failed to verify emails' })
+  }
+})
+
+app.post('/leads/enrich-phones', async (req: Request, res: Response) => {
+  if (!req.body || typeof req.body !== 'object') {
+    return res.status(400).json({ error: 'Request body is required and must be valid JSON' })
+  }
+
+  const { leadIds } = req.body as { leadIds?: number[] }
+
+  if (!Array.isArray(leadIds) || leadIds.length === 0) {
+    return res.status(400).json({ error: 'leadIds must be a non-empty array' })
+  }
+
+  try {
+    const leads = await prisma.lead.findMany({
+      where: { id: { in: leadIds.map((id) => Number(id)) } },
+    })
+
+    if (leads.length === 0) {
+      return res.status(404).json({ error: 'No leads found with the provided IDs' })
+    }
+
+    const connection = await Connection.connect({ address: 'localhost:7233' })
+    const client = new Client({ connection, namespace: 'default' })
+
+    let enrichedCount = 0
+    const results: Array<{ leadId: number; phoneNumber: string | null; phoneVerified: boolean }> = []
+    const skipped: Array<{ leadId: number; leadName: string }> = []
+    const errors: Array<{ leadId: number; leadName: string; error: string }> = []
+
+    for (const lead of leads) {
+      try {
+        // Deterministic workflowId (no timestamp) makes this idempotent: Temporal rejects a
+        // duplicate start while one is already running for this lead.
+        const { phone } = await client.workflow.execute(enrichPhoneWorkflow, {
+          taskQueue: 'myQueue',
+          workflowId: `enrich-phone-${lead.id}`,
+          args: [
+            {
+              fullName: `${lead.firstName} ${lead.lastName}`.trim(),
+              companyWebsite: lead.companyName,
+              email: lead.email,
+              jobTitle: lead.jobTitle,
+            },
+          ],
+        })
+
+        const phoneVerified = Boolean(phone)
+
+        await prisma.lead.update({
+          where: { id: lead.id },
+          data: { phoneNumber: phone ?? lead.phoneNumber, phoneVerified },
+        })
+
+        results.push({ leadId: lead.id, phoneNumber: phone, phoneVerified })
+        enrichedCount += 1
+      } catch (error) {
+        // gRPC status code 6 (ALREADY_EXISTS): a workflow is already running for this lead id.
+        if ((error as { code?: number }).code === 6) {
+          skipped.push({ leadId: lead.id, leadName: `${lead.firstName} ${lead.lastName}`.trim() })
+          continue
+        }
+
+        errors.push({
+          leadId: lead.id,
+          leadName: `${lead.firstName} ${lead.lastName}`.trim(),
+          error: error instanceof Error ? error.message : 'Unknown error',
+        })
+      }
+    }
+
+    await connection.close()
+
+    res.json({ success: true, enrichedCount, results, skipped, errors })
+  } catch (error) {
+    console.error('Error enriching phones:', error)
+    res.status(500).json({ error: 'Failed to enrich phones' })
   }
 })
 
