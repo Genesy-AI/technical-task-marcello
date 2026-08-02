@@ -341,7 +341,7 @@ app.post('/leads/enrich-phones', async (req: Request, res: Response) => {
     const client = new Client({ connection, namespace: 'default' })
 
     let enrichedCount = 0
-    const results: Array<{ leadId: number; phoneNumber: string | null; phoneEnrichmentStatus: string | null }> = []
+    const results: Array<{ leadId: number; phoneNumber: string | null; phoneVerified: boolean }> = []
     const skipped: Array<{ leadId: number; leadName: string }> = []
     const errors: Array<{ leadId: number; leadName: string; error: string }> = []
 
@@ -362,14 +362,14 @@ app.post('/leads/enrich-phones', async (req: Request, res: Response) => {
           ],
         })
 
-        const phoneEnrichmentStatus = phone ? null : 'not_found'
+        const phoneVerified = Boolean(phone)
 
         await prisma.lead.update({
           where: { id: lead.id },
-          data: { phoneNumber: phone ?? lead.phoneNumber, phoneEnrichmentStatus },
+          data: { phoneNumber: phone ?? lead.phoneNumber, phoneVerified },
         })
 
-        results.push({ leadId: lead.id, phoneNumber: phone, phoneEnrichmentStatus })
+        results.push({ leadId: lead.id, phoneNumber: phone, phoneVerified })
         enrichedCount += 1
       } catch (error) {
         // gRPC status code 6 (ALREADY_EXISTS): a workflow is already running for this lead id.

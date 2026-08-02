@@ -330,7 +330,7 @@ export const LeadsList: FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {lead.phoneNumber || (lead.phoneEnrichmentStatus === 'not_found' ? 'No data found' : '-')}
+                      {lead.phoneNumber || (lead.phoneVerified === false ? 'No data found' : '-')}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

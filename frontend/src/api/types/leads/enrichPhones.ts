@@ -8,7 +8,7 @@ export type LeadsEnrichPhonesOutput = {
     results: Array<{
         leadId: number
         phoneNumber: string | null
-        phoneEnrichmentStatus: string | null
+        phoneVerified: boolean
     }>
     skipped: Array<{
         leadId: number
